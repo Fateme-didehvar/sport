@@ -1,0 +1,84 @@
+import requests
+from bs4 import BeautifulSoup
+import time
+
+# Define the target URL
+url = "https://www.goal.com/"
+
+# Send a GET request to the website
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+}
+
+def extract_data_from_subpage(subpage_url):
+    try:
+        subpage_response = requests.get(subpage_url, headers=headers, timeout=10)
+        subpage_response.raise_for_status()
+
+        subpage_soup = BeautifulSoup(subpage_response.text, 'html.parser')
+        
+        # Extract sport type, matches played, wins, players, and performance
+        sport_type = "Extracted sport type here"  # You need to adjust this based on actual HTML structure
+        matches_played = "Extracted number of matches here"
+        wins = "Extracted number of wins here"
+        
+        players = []
+        # Extract player names and their performance from the page
+        for player_section in subpage_soup.find_all('div', class_='player-info'):  # Adjust selector
+            player_name = player_section.find('span', class_='player-name').text
+            performance = player_section.find('span', class_='performance').text  # Adjust selector
+            players.append((player_name, performance))
+
+        return {
+            "sport_type": sport_type,
+            "matches_played": matches_played,
+            "wins": wins,
+            "players": players,
+            "url": subpage_url
+        }
+
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred while accessing {subpage_url}: {e}")
+        return None
+
+try:
+    response = requests.get(url, headers=headers, timeout=10)
+    response.raise_for_status()
+    
+    soup = BeautifulSoup(response.text, 'html.parser')
+    links = soup.find_all('a', href=True)
+
+    base_url = "https://www.goal.com"
+    subpage_links = set()
+
+    for link in links:
+        href = link['href']
+        if href.startswith('/'):
+            full_url = base_url + href
+        elif href.startswith('http'):
+            full_url = href
+        else:
+            continue
+
+        if "article" in full_url or "news" in full_url:
+            subpage_links.add(full_url)
+
+    results = []
+    for subpage_url in subpage_links:
+        data = extract_data_from_subpage(subpage_url)
+        if data:
+            results.append(data)
+        time.sleep(1)
+
+    # Now you can sort and display results based on your criteria
+    results.sort(key=lambda x: (x['sport_type'], x['matches_played'], x['wins']))
+    
+    for result in results:
+        print(f"URL: {result['url']}\nSport: {result['sport_type']}\nMatches Played: {result['matches_played']}\nWins: {result['wins']}")
+        print("Players and Performance:")
+        for player, performance in result['players']:
+            print(f"- {player}: {performance}")
+        print("\n")
+
+except requests.exceptions.RequestException as e:
+    print(f"An error occurred: {e}")
