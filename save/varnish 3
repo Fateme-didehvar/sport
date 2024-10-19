@@ -1,0 +1,12 @@
+# Define the path to save the file
+desktop_path = "/Users/salar/Desktop"  # Adjust to your actual username
+file_path = f"{desktop_path}/varzesh3_scraper.txt"
+
+# Write the code to the file
+try:
+    with open(file_path, 'w', encoding='utf-8') as file:
+        file.write(code)
+
+    print(f"Code has been saved to {file_path}")
+except FileNotFoundError as e:
+    print(f"Error: {e}. Please check the file path.")
